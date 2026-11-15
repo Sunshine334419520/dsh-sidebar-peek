@@ -11,7 +11,7 @@
 [English](README.md) · [GitHub](https://github.com/Sunshine334419520/dsh-sidebar-peek) · [预览](#预览) · [状态](#状态) · [交互判定](#交互判定) · [实现](#实现) · [安装](#安装) · [可调参数](#可调参数) · [兼容与限制](#兼容与限制)
 
 [![DSH Plugin](https://img.shields.io/badge/DSH-Plugin-0f766e.svg)](https://github.com/deepseek-ai/deepseek-harness)
-[![version](https://img.shields.io/badge/version-0.1.0-6b7280.svg)](package.json)
+[![npm](https://img.shields.io/npm/v/dsh-sidebar-peek.svg)](https://www.npmjs.com/package/dsh-sidebar-peek)
 [![runtime](https://img.shields.io/badge/runtime-client%20only-4176e6.svg)](#实现)
 [![dependencies](https://img.shields.io/badge/dependencies-none-2ea043.svg)](package.json)
 
@@ -29,7 +29,7 @@ DSH 的侧边栏只有两种形态：280px 宽，或者收成 56px 图标栏等�
 
 ## 特性
 
-- **静止即收起** —— Web 布局下是 56px 图标栏；macOS 桌面版宿根本没有图标栏，改由屏幕左缘 6px 热区接管。见 [兼容与限制](#兼容与限制)。
+- **静止即收起** —— Web 布局下是 56px 图标栏。桌面版没有图标栏：macOS 直接把整列收成 0 宽，Windows 把两个 28px 的按钮固定在标题栏里，所以由标题栏上那个侧边栏开关（或屏幕左缘）接管。见 [兼容与限制](#兼容与限制)。
 - **浮层展开** —— 侧边栏浮在对话之上，宽 280px（或你上次拖出的宽度）。对话区不重排、不换行、不跳动。
 - **双向收起** —— 指针离开后宽限一小段时间再收起；`Esc`、窗口失焦、窗口 resize、点击侧边栏以外区域则立刻收起。
 - **手动优先** —— 点图标栏顶部的开关就是「固定展开」，悬停不会跟你抢。按过 `Esc` 或点过外面之后，在指针离开图标栏之前不会再自动展开。
@@ -41,8 +41,8 @@ DSH 的侧边栏只有两种形态：280px 宽，或者收成 56px 图标栏等�
 
 | 状态 | 触发 | 结果 |
 | --- | --- | --- |
-| 静止 | 页面加载 / 指针离开 | 收成 56px 图标栏；macOS 桌面版收成 0 宽，改用左缘热区 |
-| 悬停 | 指针在图标栏（或热区）停 160ms | 浮层展开到 280px 或上次拖出的宽度，对话区不动 |
+| 静止 | 页面加载 / 指针离开 | 收成 56px 图标栏；桌面版收成标题栏开关，或改用左缘热区 |
+| 悬停 | 指针在图标栏、标题栏开关或热区停 160ms | 浮层展开到 280px 或上次拖出的宽度，对话区不动 |
 | 固定 | 点图标栏顶部的开关 | 保持展开，直到你自己收起 |
 
 ## 交互判定
@@ -66,7 +66,7 @@ ctx.layout.toggleSidebar()   // 收起 ⟷ 展开，和手动点开关完全同�
 `overlay` 模式（默认）这样把浮层叠出来：
 
 1. 展开前把 frame 上那行 `gridTemplateColumns` 原样存进 `--dsh-peek-grid`，再用 `[data-dsh-peek]{grid-template-columns:var(--dsh-peek-grid)!important}` 把网格钉在收起时的列宽上，对话区因此一步都不动。
-2. 给侧边栏列打上 `data-dsh-peek-col`，把它从网格里抬出来：`position:absolute`、`inset:0 auto auto 0`、宽高取展开目标、`z-index:40`，再补一层不透明底色、右描边和投影。macOS 桌面版的侧边栏本来是窗口 vibrancy 做的半透明层，直接浮在正文上会透字。
+2. 给侧边栏列打上 `data-dsh-peek-col`，把它从网格里抬出来：`position:absolute`、`inset:var(--dsh-frame-chrome-top,0px) auto auto 0`（这样 Windows 的标题栏不会被盖住）、宽高取展开目标、`z-index:40`，再补一层不透明底色、右描边和投影。macOS 桌面版的侧边栏本来是窗口 vibrancy 做的半透明层，直接浮在正文上会透字。
 3. 收起时先把列宽压回图标栏宽度，320ms 后再摘掉所有标记，让宿主的淡出先跑完。浮层宽度读的是 React 提交的那行行内宽度（`element.style.width`），不是动画途中的盒子宽度，所以不会停在半路。
 
 `push` 模式不叠浮层，直接用宿主原本的挤压式展开——对话区会跟着让位。想要传统手感就切过去。
@@ -90,6 +90,14 @@ ctx.layout.toggleSidebar()   // 收起 ⟷ 展开，和手动点开关完全同�
 装完告诉我刷新页面。它应该让侧边栏平时收成图标栏，指针停上去时浮层展开。
 ```
 
+### 从 npm 安装
+
+```bash
+dsh plugin --profile desktop add dsh-sidebar-peek
+```
+
+已发布为 [`dsh-sidebar-peek`](https://www.npmjs.com/package/dsh-sidebar-peek)；把 `desktop` 换成你的 profile 名（`dsh profiles` 可列出）。
+
 ### 从源码安装
 
 ```bash
@@ -103,7 +111,7 @@ dsh plugin --profile desktop add /绝对路径/dsh-sidebar-peek
 dsh plugin --profile desktop add "$PWD"
 ```
 
-包是 `private: true`，没有发布到 npm——请从路径安装，或让 Agent 用 `plugin_manager` 指向 bundle 的绝对目录。
+npm 包和按路径安装带的是同一批文件（`client.js`、`index.js`、`cordis.patch.yml`、各语言元数据、图标）；让 Agent 用 `plugin_manager` 指向 bundle 的绝对目录效果一样。
 
 ### 重载
 
@@ -145,6 +153,7 @@ location.reload()
 ## 兼容与限制
 
 - **macOS 桌面版没有图标栏**。宿主在收起时把这一列宽度定为 `0`，把展开按钮放在红绿灯旁边那条带上（`--dsh-frame-leading-clearance: 160px`）。插件不跟平台设计对着干：在 darwin 上由屏幕左缘 6px 热区触发。56px 图标栏出现在浏览器里打开的 DSH Web（非 darwin 布局）。
+- **Windows 桌面版保留了标题栏按钮**。frame 预留了一条标题栏（`padding-top: var(--dsh-windows-titlebar-height)`，`::before` 上是 `-webkit-app-region: drag`），收起后的侧边栏是固定在标题栏里的两个 28px 按钮，而不是一列。所以浮层列从标题栏**下方**开始（`--dsh-frame-chrome-top`）：标题栏按钮仍然可点，窗口仍然可拖；触发点是标题栏上的侧边栏开关，标题栏下方 6px 的左缘热区作为兜底。
 - **宿主优先**。宿主自己改变收起状态时（窗口变窄、切到抽屉模式），插件立刻放弃浮层并跟随，不会反向操作。
 - **浮层期间对话区宽度不变**，所以这期间宿主做的布局变更（比如打开右侧面板）要等浮层结束才能完整看到。
 - **截图是模拟的**。这个插件是在没有浏览器自动化的会话里写成的，`docs/preview.png` 是用宿主的真实配色在 `docs/preview.html` 里画出来再渲染的，不是从运行中的界面截的。行为对照宿主源码（`AppFrame.tsx`、`AppFrame.module.css`、`SidebarRoot.tsx`）审查过，也过了 `node --check`；像素级验证需要你自己看一眼。
@@ -169,7 +178,7 @@ location.reload()
 | 页面加载时侧边栏是展开的 | `startCollapsed=1` 时属预期——插件挂载后会收一次；设 `0` 则保持宿主原状 |
 | 浮层自己收回了 | 有对话框 / 菜单打开，或窗口失焦；指针只是短暂离开的话把 `leaveDelay` 调大 |
 | 浮层期间拖不动侧边栏宽度 | 有意为之——浮层期间禁用列宽拖拽 |
-| macOS 桌面版怎么试都没有浮层 | 该平台没有图标栏；把指针移到屏幕左缘再试 |
+| 桌面版怎么试都没有浮层 | 该平台没有图标栏；把指针移到窗口标题栏的侧边栏开关上（macOS 在红绿灯右侧、Windows 在左上角），或屏幕左缘 |
 
 ## 开发
 
@@ -179,12 +188,3 @@ dsh plugin --profile desktop add "$PWD"
 ```
 
 纯 ESM，无构建步骤，无运行时依赖。`client.js` 是经 `window.__ModuleLoader__` 加载的 Cordis Client 模块，`index.js` 是宿主半边。改完刷新页面；只有模块抛错时才需要去「插件」里重新启用。
-
-重新生成预览图：
-
-```bash
-"/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge" \
-  --headless=new --hide-scrollbars --force-device-scale-factor=2 \
-  --window-size=1240,760 --screenshot=docs/preview.png \
-  "file://$PWD/docs/preview.html"
-```

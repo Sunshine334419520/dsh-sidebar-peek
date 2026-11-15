@@ -1,9 +1,26 @@
 {
-  "name": "@local/dsh-sidebar-peek",
+  "name": "dsh-sidebar-peek",
   "version": "0.1.0",
-  "private": true,
+  "description": "Edge-style hover peek for the DeepSeek Harness sidebar: it rests as an icon rail and expands while the pointer is on it.",
+  "license": "MIT",
   "type": "module",
-  "description": "Expands the left sidebar while the pointer rests on its rail, and collapses it on leave.",
+  "keywords": [
+    "dsh",
+    "deepseek-harness",
+    "deepseek",
+    "plugin",
+    "sidebar",
+    "hover",
+    "edge"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Sunshine334419520/dsh-sidebar-peek.git"
+  },
+  "homepage": "https://github.com/Sunshine334419520/dsh-sidebar-peek#readme",
+  "bugs": {
+    "url": "https://github.com/Sunshine334419520/dsh-sidebar-peek/issues"
+  },
   "exports": {
     ".": "./index.js",
     "./client": "./client.js",
@@ -19,7 +36,8 @@
     "README.md",
     "README.zh-CN.md",
     "docs/preview.html",
-    "docs/preview.png"
+    "docs/preview.png",
+    "LICENSE"
   ],
   "dsh": {
     "bundle": {

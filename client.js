@@ -1,10 +1,11 @@
 /**
  * Edge-style hover peek for the DSH left sidebar.
  *
- * The rail (collapsed sidebar) stays as it is. Moving the pointer into the rail
- * — or into a narrow strip at the left edge on platforms that hide the rail —
- * expands the sidebar through the public `ctx.layout.toggleSidebar()` action,
- * and leaving it collapses the sidebar again.
+ * The rail (collapsed sidebar) stays as it is. Moving the pointer into the rail,
+ * into the sidebar control the shell keeps in the window chrome while the
+ * column is hidden (Windows caption strip, macOS leading seat), or into a narrow
+ * strip at the left edge expands the sidebar through the public
+ * `ctx.layout.toggleSidebar()` action, and leaving it collapses it again.
  *
  * In `overlay` mode (default) the expansion does not squeeze the conversation:
  * the frozen grid track keeps the centre column where it was and the sidebar
@@ -21,7 +22,7 @@
  *                                   "0" leaves the opening state alone
  */
 window.__ModuleLoader__.load({
-  id: '@local/dsh-sidebar-peek',
+  id: 'dsh-sidebar-peek',
   factory() {
     /** Sidebar width the host expands to before any drag. */
     const DEFAULT_WIDTH = 280
@@ -52,7 +53,7 @@ window.__ModuleLoader__.load({
 [data-dsh-peek-col]{
   position:absolute !important;
   grid-area:auto !important;
-  inset:0 auto auto 0 !important;
+  inset:var(--dsh-frame-chrome-top,0px) auto auto 0 !important;
   height:var(--dsh-peek-height,100%) !important;
   width:var(--dsh-peek-width,${DEFAULT_WIDTH}px) !important;
   z-index:40 !important;
@@ -99,6 +100,7 @@ window.__ModuleLoader__.load({
       /** Memoised shell frame and sidebar column for the per-move handler. */
       frame: null,
       col: null,
+      control: null,
     }
 
     /**
@@ -350,6 +352,52 @@ window.__ModuleLoader__.load({
       if (state.peek !== null) close(ctx)
     }
 
+    /**
+     * Height of the window-chrome band the shell reserves above its content
+     * (Windows caption strip, macOS traffic lights). The peek column starts
+     * below it so the caption's own controls stay reachable.
+     */
+    let chromeTopCache = -1
+
+    function chromeTop() {
+      if (chromeTopCache >= 0) return chromeTopCache
+      let top = 0
+      try {
+        const style = window.getComputedStyle(document.documentElement)
+        const clearance = Number.parseFloat(style.getPropertyValue("--dsh-frame-top-clearance"))
+        const chrome = Number.parseFloat(style.getPropertyValue("--dsh-frame-chrome-top"))
+        top = Math.max(Number.isFinite(clearance) ? clearance : 0, Number.isFinite(chrome) ? chrome : 0)
+      } catch {}
+      chromeTopCache = top
+      return top
+    }
+
+    /** The sidebar toggle the shell renders in the window chrome, if any. */
+    function controlOf(frame) {
+      const cached = state.control
+      if (cached !== null && cached.isConnected && frame.contains(cached)) return cached
+      const control = frame.querySelector(TOGGLE_SELECTOR)
+      state.control = control instanceof HTMLElement ? control : null
+      return state.control
+    }
+
+    /**
+     * Where the collapsed column has no rail to hover, the only sidebar
+     * affordance is the toggle in the window chrome: hovering it peeks too.
+     */
+    function overControl(frame, x, y) {
+      const control = controlOf(frame)
+      if (control === null) return false
+      let rect
+      try {
+        rect = control.getBoundingClientRect()
+      } catch {
+        return false
+      }
+      if (rect.width <= 0 || rect.height <= 0) return false
+      return inside(rect.left - 6, rect.right + 6, rect.top - 6, rect.bottom + 6, x, y)
+    }
+
     function inside(left, right, top, bottom, x, y) {
       return x >= left - 1 && x <= right + 1 && y >= top - 1 && y <= bottom + 1
     }
@@ -397,8 +445,13 @@ window.__ModuleLoader__.load({
         return
       }
       const rail = rect.width >= RAIL_MIN
+      // The hot edge stays out of the chrome band: that band is the window
+      // drag region, and a peek trap next to the resize border is a nuisance.
       const edge = rail ? rect.right : HOT_EDGE
-      if (!inside(0, edge, rect.top, rect.bottom, event.clientX, event.clientY)) {
+      const top = rail ? rect.top : chromeTop()
+      const inZone = inside(0, edge, top, rect.bottom, event.clientX, event.clientY)
+        || (!rail && overControl(frame, event.clientX, event.clientY))
+      if (!inZone) {
         clearOpenTimer()
         if (state.suppressed) state.suppressed = false
         return
@@ -500,7 +553,7 @@ window.__ModuleLoader__.load({
 
         ctx.effect(() => {
           const style = document.createElement('style')
-          style.setAttribute('data-plugin', '@local/dsh-sidebar-peek')
+          style.setAttribute('data-plugin', 'dsh-sidebar-peek')
           style.textContent = STYLE
           document.head.append(style)
           return () => { style.remove() }
@@ -513,7 +566,10 @@ window.__ModuleLoader__.load({
           const key = event => onKeyDown(ctx, event)
           const out = event => onPointerOut(ctx, event)
           const blur = () => releaseNow(ctx)
-          const resize = () => releaseNow(ctx)
+          const resize = () => {
+            chromeTopCache = -1
+            releaseNow(ctx)
+          }
           let disposed = false
           const stopStart = START_COLLAPSED ? collapseAtStart(ctx, () => disposed) : () => {}
           document.addEventListener('pointermove', move, { capture: true, passive: true })
