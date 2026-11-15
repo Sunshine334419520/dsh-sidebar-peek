@@ -1,6 +1,6 @@
 {
   "name": "dsh-sidebar-peek",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Edge-style hover peek for the DeepSeek Harness sidebar: it rests as an icon rail and expands while the pointer is on it.",
   "license": "MIT",
   "type": "module",
