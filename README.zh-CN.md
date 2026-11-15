@@ -153,7 +153,7 @@ location.reload()
 ## 兼容与限制
 
 - **macOS 桌面版没有图标栏**。宿主在收起时把这一列宽度定为 `0`，把展开按钮放在红绿灯旁边那条带上（`--dsh-frame-leading-clearance: 160px`）。插件不跟平台设计对着干：在 darwin 上由屏幕左缘 6px 热区触发。56px 图标栏出现在浏览器里打开的 DSH Web（非 darwin 布局）。
-- **Windows 桌面版保留了标题栏按钮**。frame 预留了一条标题栏（`padding-top: var(--dsh-windows-titlebar-height)`，`::before` 上是 `-webkit-app-region: drag`），收起后的侧边栏是固定在标题栏里的两个 28px 按钮，而不是一列。所以浮层列从标题栏**下方**开始（`--dsh-frame-chrome-top`）：标题栏按钮仍然可点，窗口仍然可拖；触发点是标题栏上的侧边栏开关，标题栏下方 6px 的左缘热区作为兜底。
+- **Windows 桌面版保留了标题栏按钮**。frame 预留了一条标题栏（`padding-top: var(--dsh-windows-titlebar-height)`，`::before` 上是 `-webkit-app-region: drag`），收起后的侧边栏是固定在标题栏里的两个 28px 按钮，而不是一列。所以浮层列从标题栏**下方**开始（`--dsh-frame-chrome-top`）：标题栏按钮仍然可点，窗口仍然可拖；触发点是标题栏上的侧边栏开关，标题栏下方 6px 的左缘热区作为兜底。这一条是对照宿主源码得出的，也只过了 `node --check`，没有在 Windows 机器上实测。
 - **宿主优先**。宿主自己改变收起状态时（窗口变窄、切到抽屉模式），插件立刻放弃浮层并跟随，不会反向操作。
 - **浮层期间对话区宽度不变**，所以这期间宿主做的布局变更（比如打开右侧面板）要等浮层结束才能完整看到。
 - **截图是模拟的**。这个插件是在没有浏览器自动化的会话里写成的，`docs/preview.png` 是用宿主的真实配色在 `docs/preview.html` 里画出来再渲染的，不是从运行中的界面截的。行为对照宿主源码（`AppFrame.tsx`、`AppFrame.module.css`、`SidebarRoot.tsx`）审查过，也过了 `node --check`；像素级验证需要你自己看一眼。
