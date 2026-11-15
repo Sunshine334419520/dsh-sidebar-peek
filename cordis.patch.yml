@@ -1,0 +1,3 @@
+- insert:
+    - id: sidebar-peek
+      name: '@local/dsh-sidebar-peek'

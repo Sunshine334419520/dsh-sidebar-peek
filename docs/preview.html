@@ -1,0 +1,319 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>DSH 侧边栏悬停展开 · 效果示意</title>
+<style>
+  :root{
+    --sans: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", sans-serif;
+    --mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+    --bg: #ffffff;
+    --sidebar: #f9fafb;
+    --label: #0f1115;
+    --label2: #61666b;
+    --label3: #81858c;
+    --label4: #adb2b8;
+    --border: rgba(0,0,0,.12);
+    --border-soft: rgba(0,0,0,.06);
+    --hover: rgba(38,49,72,.06);
+    --brand: rgb(65,118,230);
+    --bubble: #edf3fe;
+    --tint: rgba(122,155,240,.10);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    width:1240px;height:760px;overflow:hidden;
+    font-family:var(--sans);
+    background:
+      radial-gradient(1100px 520px at 88% -12%, rgba(65,118,230,.09), transparent 62%),
+      radial-gradient(900px 460px at 2% 108%, rgba(122,155,240,.10), transparent 60%),
+      #eef1f6;
+    color:var(--label);
+    -webkit-font-smoothing:antialiased;
+  }
+  .board{display:flex;height:100%;padding:34px 38px 30px;gap:30px}
+  .col{display:flex;flex-direction:column;flex:1;min-width:0}
+
+  /* ---- heading ---- */
+  .head{position:absolute;top:0;left:0;right:0;padding:34px 38px 0;display:flex;align-items:baseline;gap:12px}
+  .board{padding-top:96px}
+
+  .tag{
+    display:inline-flex;align-items:center;gap:7px;
+    font:600 12px/1 var(--sans);letter-spacing:.02em;color:var(--brand);
+    background:#fff;border:1px solid rgba(65,118,230,.22);
+    padding:7px 11px;border-radius:999px;
+  }
+  .tag svg{width:13px;height:13px}
+
+  /* ---- window ---- */
+  .win{
+    flex:1;display:flex;flex-direction:column;min-height:0;
+    background:var(--bg);
+    border:1px solid var(--border);
+    border-radius:13px;
+    box-shadow:0 1px 2px rgba(15,17,21,.05), 0 18px 44px -24px rgba(15,17,21,.30);
+    overflow:hidden;
+    position:relative;
+  }
+  .chrome{
+    height:38px;flex:none;display:flex;align-items:center;gap:12px;
+    padding:0 14px;border-bottom:1px solid var(--border-soft);
+    background:linear-gradient(#fff,#fcfdfe);
+  }
+  .lights{display:flex;gap:7px}
+  .lights i{width:10px;height:10px;border-radius:50%;display:block}
+  .lights i:nth-child(1){background:#ff5f57}
+  .lights i:nth-child(2){background:#febc2e}
+  .lights i:nth-child(3){background:#28c840}
+  .win-title{font:500 11.5px/1 var(--sans);color:var(--label3);letter-spacing:.01em}
+  .win-title b{color:var(--label2);font-weight:600}
+
+  .frame{flex:1;display:flex;min-height:0;position:relative}
+
+  /* ---- rail ---- */
+  .rail{
+    width:56px;flex:none;display:flex;flex-direction:column;align-items:center;
+    gap:6px;padding:10px 0 12px;
+    background:var(--sidebar);
+    border-right:.5px solid var(--border);
+    position:relative;z-index:2;
+  }
+  .rail .brand{
+    width:28px;height:28px;border-radius:9px;display:grid;place-items:center;
+    background:linear-gradient(150deg,#5b8bff,#3f6fe0);color:#fff;
+    box-shadow:0 4px 10px -4px rgba(63,111,224,.6);margin-bottom:8px;
+  }
+  .rail .brand svg{width:16px;height:16px}
+  .rail .sep{width:20px;height:1px;background:var(--border-soft);margin:2px 0 4px}
+  .rail .icon{
+    width:32px;height:32px;border-radius:9px;display:grid;place-items:center;
+    color:var(--label3);position:relative;
+  }
+  .rail .icon svg{width:17px;height:17px}
+  .rail .icon.on{background:var(--hover);color:var(--label)}
+  .rail .icon.plus{background:var(--hover);color:var(--label2)}
+  .rail .icon.busy::after{
+    content:"";position:absolute;right:5px;bottom:5px;width:6px;height:6px;border-radius:50%;
+    background:var(--brand);border:1.5px solid var(--sidebar);
+  }
+  .rail .foot{margin-top:auto;display:flex;flex-direction:column;gap:6px;align-items:center}
+
+  /* ---- conversation ---- */
+  .center{flex:1;min-width:0;display:flex;flex-direction:column;background:var(--bg);position:relative}
+  .bar{
+    height:44px;flex:none;display:flex;align-items:center;gap:8px;padding:0 16px;
+    border-bottom:1px solid var(--border-soft);
+  }
+  .bar .dot{width:6px;height:6px;border-radius:50%;background:#28c840}
+  .bar .t{font:600 12px/1 var(--sans);color:var(--label2)}
+  .bar .pill{
+    margin-left:auto;font:500 10.5px/1 var(--mono);color:var(--label3);
+    border:1px solid var(--border-soft);border-radius:7px;padding:5px 7px;background:#fcfdfe;
+  }
+  .thread{flex:1;padding:20px 22px;display:flex;flex-direction:column;gap:14px;overflow:hidden}
+  .msg-me{align-self:flex-end;max-width:78%;background:var(--bubble);border-radius:13px 13px 4px 13px;padding:10px 13px}
+  .msg-ai{max-width:88%;display:flex;gap:9px}
+  .avatar{width:22px;height:22px;border-radius:7px;flex:none;background:linear-gradient(150deg,#5b8bff,#3f6fe0);display:grid;place-items:center;color:#fff}
+  .avatar svg{width:12px;height:12px}
+  .lines{display:flex;flex-direction:column;gap:8px;padding-top:2px;flex:1}
+  .ln{height:7px;border-radius:4px;background:var(--hover)}
+  .ln.s{width:62%}
+  .ln.m{width:86%}
+  .ln.x{width:44%}
+  .code{border-radius:9px;border:1px solid var(--border-soft);background:#fcfdfe;padding:9px 11px;display:flex;flex-direction:column;gap:6px}
+  .code .ln{background:rgba(65,118,230,.13)}
+  .composer{
+    flex:none;margin:0 16px 14px;border:1px solid var(--border);border-radius:12px;
+    padding:11px 12px;display:flex;align-items:center;gap:10px;background:#fff;
+    box-shadow:0 1px 2px rgba(15,17,21,.04);
+  }
+  .composer .ph{font:400 11.5px/1 var(--sans);color:var(--label4)}
+  .composer .send{
+    margin-left:auto;width:24px;height:24px;border-radius:7px;background:var(--brand);
+    display:grid;place-items:center;color:#fff;
+  }
+  .composer .send svg{width:13px;height:13px}
+
+  /* ---- expanded sidebar (overlay) ---- */
+  .peek{
+    position:absolute;top:0;left:0;bottom:0;width:280px;z-index:5;
+    background:var(--sidebar);
+    border-right:.5px solid var(--border);
+    box-shadow:0 12px 32px -16px rgba(0,0,0,.24);
+    display:flex;flex-direction:column;
+  }
+  .peek .top{height:44px;flex:none;display:flex;align-items:center;gap:8px;padding:0 12px;border-bottom:1px solid var(--border-soft)}
+  .peek .top .name{font:600 12.5px/1 var(--sans);color:var(--label)}
+  .peek .top .chev{margin-left:auto;color:var(--label4);display:grid;place-items:center}
+  .peek .top .chev svg{width:14px;height:14px;display:block}
+  .peek .new{
+    margin:10px 10px 6px;height:32px;border-radius:9px;background:#fff;border:1px solid var(--border-soft);
+    display:flex;align-items:center;gap:8px;padding:0 10px;color:var(--label2);
+    font:600 11.5px/1 var(--sans);box-shadow:0 1px 2px rgba(15,17,21,.04);
+  }
+  .peek .new svg{width:13px;height:13px}
+  .peek .group{font:600 10px/1 var(--sans);letter-spacing:.06em;color:var(--label4);padding:12px 14px 7px;text-transform:uppercase}
+  .peek .item{
+    display:flex;align-items:center;gap:9px;height:32px;margin:1px 8px;padding:0 8px;border-radius:8px;
+    font:400 11.5px/1 var(--sans);color:var(--label2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .peek .item.sel{background:rgba(38,49,72,.08);color:var(--label);font-weight:500}
+  .peek .item .b{width:5px;height:5px;border-radius:50%;background:var(--label4);flex:none}
+  .peek .item.sel .b{background:var(--brand)}
+  .peek .item span{overflow:hidden;text-overflow:ellipsis}
+
+  /* ---- annotations ---- */
+  .cap{margin-top:14px;display:flex;align-items:center;gap:9px;font:400 12.5px/1.45 var(--sans);color:#4b5259}
+  .cap b{font-weight:600;color:var(--label)}
+  .cap .state{
+    flex:none;display:inline-grid;place-items:center;min-width:20px;height:20px;border-radius:6px;
+    font:700 11px/1 var(--sans);color:#fff;background:#3f4a5a;
+  }
+  .cap .state.hot{background:var(--brand)}
+  .cursor{position:absolute;z-index:10;width:19px;height:26px;filter:drop-shadow(0 2px 3px rgba(15,17,21,.35))}
+</style>
+</head>
+<body>
+  <div class="head">
+    <div class="tag">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"><path d="M4 6h16M4 12h9M4 18h13"/></svg>
+      @local/dsh-sidebar-peek
+    </div>
+    <div style="font:500 12px/1 var(--sans);color:#7c848d">效果示意 · HTML 模拟（非真实截图）</div>
+  </div>
+
+  <div class="board">
+    <!-- A: 静止 -->
+    <div class="col">
+      <div class="win">
+        <div class="chrome">
+          <div class="lights"><i></i><i></i><i></i></div>
+          <div class="win-title"><b>DeepSeek Harness</b> · 侧边栏悬停展开</div>
+        </div>
+        <div class="frame">
+          <aside class="rail">
+            <div class="brand">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3.6 13.8c1.9.9 4.2 1.4 6.6 1.4 1.4 0 2.7-.2 3.9-.5-.4 1.5-1.2 2.9-2.3 4.1-.8.9-1.8 1.6-2.9 2.1-.3.1-.5.5-.3.8.1.2.3.3.5.3 3.6 0 6.9-1.4 9.4-3.9 2-2 3.2-4.6 3.5-7.5.1-.9.1-1.8 0-2.7 0-.3.1-.6.3-.8.7-.7 1.2-1.5 1.6-2.4.1-.3-.2-.6-.5-.5-1 .3-1.9.8-2.7 1.5-.2.2-.5.2-.7.1C17.5 4.9 15 4.1 12.4 4.1 7.3 4.1 3.1 8.3 3.1 13.4c0 .1 0 .3.1.4 0 .1.2.1.4 0z"/></svg>
+            </div>
+            <div class="icon plus">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+            </div>
+            <div class="sep"></div>
+            <div class="icon on">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 8.6 8.6 0 0 1-3.8-.9L3 20.5l1.5-4.6A8.4 8.4 0 0 1 12 3.4a8.4 8.4 0 0 1 9 8.1z"/></svg>
+            </div>
+            <div class="icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H19v18H6.5A2.5 2.5 0 0 1 4 18.5z"/><path d="M4 17.5h15"/></svg>
+            </div>
+            <div class="icon busy">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7.5h6l2 2.5h10v8.5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+            </div>
+            <div class="icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+            </div>
+            <div class="foot">
+              <div class="icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.4"/><path d="M4.8 20a7.2 7.2 0 0 1 14.4 0"/></svg>
+              </div>
+            </div>
+          </aside>
+
+          <div class="center">
+            <div class="bar"><span class="dot"></span><span class="t">把侧边栏做成悬停展开</span><span class="pill">deepseek-flash</span></div>
+            <div class="thread">
+              <div class="msg-me"><div class="ln m" style="background:rgba(65,118,230,.22);width:150px"></div></div>
+              <div class="msg-ai">
+                <div class="avatar"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3.6 13.8c1.9.9 4.2 1.4 6.6 1.4 1.4 0 2.7-.2 3.9-.5-.4 1.5-1.2 2.9-2.3 4.1-.8.9-1.8 1.6-2.9 2.1-.3.1-.5.5-.3.8.1.2.3.3.5.3 3.6 0 6.9-1.4 9.4-3.9 2-2 3.2-4.6 3.5-7.5.1-.9.1-1.8 0-2.7 0-.3.1-.6.3-.8.7-.7 1.2-1.5 1.6-2.4.1-.3-.2-.6-.5-.5-1 .3-1.9.8-2.7 1.5-.2.2-.5.2-.7.1C17.5 4.9 15 4.1 12.4 4.1 7.3 4.1 3.1 8.3 3.1 13.4c0 .1 0 .3.1.4 0 .1.2.1.4 0z"/></svg></div>
+                <div class="lines">
+                  <div class="ln m"></div>
+                  <div class="ln"></div>
+                  <div class="ln s"></div>
+                  <div class="code"><div class="ln m" style="width:52%"></div><div class="ln" style="width:78%"></div><div class="ln x" style="width:38%"></div></div>
+                  <div class="ln m"></div>
+                  <div class="ln x"></div>
+                </div>
+              </div>
+            </div>
+            <div class="composer"><div class="ph">给 DeepSeek Harness 发消息…</div><div class="send"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M6 11l6-6 6 6"/></svg></div></div>
+          </div>
+        </div>
+      </div>
+      <div class="cap"><span class="state">A</span><span><b>静止</b>：侧边栏收起成 56px 图标栏，对话占满宽度</span></div>
+    </div>
+
+    <!-- B: 悬停 -->
+    <div class="col">
+      <div class="win">
+        <div class="chrome">
+          <div class="lights"><i></i><i></i><i></i></div>
+          <div class="win-title"><b>DeepSeek Harness</b> · 侧边栏悬停展开</div>
+        </div>
+        <div class="frame">
+          <aside class="rail">
+            <div class="brand">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3.6 13.8c1.9.9 4.2 1.4 6.6 1.4 1.4 0 2.7-.2 3.9-.5-.4 1.5-1.2 2.9-2.3 4.1-.8.9-1.8 1.6-2.9 2.1-.3.1-.5.5-.3.8.1.2.3.3.5.3 3.6 0 6.9-1.4 9.4-3.9 2-2 3.2-4.6 3.5-7.5.1-.9.1-1.8 0-2.7 0-.3.1-.6.3-.8.7-.7 1.2-1.5 1.6-2.4.1-.3-.2-.6-.5-.5-1 .3-1.9.8-2.7 1.5-.2.2-.5.2-.7.1C17.5 4.9 15 4.1 12.4 4.1 7.3 4.1 3.1 8.3 3.1 13.4c0 .1 0 .3.1.4 0 .1.2.1.4 0z"/></svg>
+            </div>
+            <div class="icon plus">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+            </div>
+            <div class="sep"></div>
+            <div class="icon on">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 8.6 8.6 0 0 1-3.8-.9L3 20.5l1.5-4.6A8.4 8.4 0 0 1 12 3.4a8.4 8.4 0 0 1 9 8.1z"/></svg>
+            </div>
+            <div class="icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H19v18H6.5A2.5 2.5 0 0 1 4 18.5z"/><path d="M4 17.5h15"/></svg>
+            </div>
+            <div class="icon busy">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7.5h6l2 2.5h10v8.5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+            </div>
+            <div class="icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+            </div>
+          </aside>
+
+          <div class="center">
+            <div class="bar"><span class="dot"></span><span class="t">把侧边栏做成悬停展开</span><span class="pill">deepseek-flash</span></div>
+            <div class="thread">
+              <div class="msg-me"><div class="ln m" style="background:rgba(65,118,230,.22);width:150px"></div></div>
+              <div class="msg-ai">
+                <div class="avatar"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3.6 13.8c1.9.9 4.2 1.4 6.6 1.4 1.4 0 2.7-.2 3.9-.5-.4 1.5-1.2 2.9-2.3 4.1-.8.9-1.8 1.6-2.9 2.1-.3.1-.5.5-.3.8.1.2.3.3.5.3 3.6 0 6.9-1.4 9.4-3.9 2-2 3.2-4.6 3.5-7.5.1-.9.1-1.8 0-2.7 0-.3.1-.6.3-.8.7-.7 1.2-1.5 1.6-2.4.1-.3-.2-.6-.5-.5-1 .3-1.9.8-2.7 1.5-.2.2-.5.2-.7.1C17.5 4.9 15 4.1 12.4 4.1 7.3 4.1 3.1 8.3 3.1 13.4c0 .1 0 .3.1.4 0 .1.2.1.4 0z"/></svg></div>
+                <div class="lines">
+                  <div class="ln m"></div>
+                  <div class="ln"></div>
+                  <div class="ln s"></div>
+                  <div class="code"><div class="ln m" style="width:52%"></div><div class="ln" style="width:78%"></div><div class="ln x" style="width:38%"></div></div>
+                  <div class="ln m"></div>
+                  <div class="ln x"></div>
+                </div>
+              </div>
+            </div>
+            <div class="composer"><div class="ph">给 DeepSeek Harness 发消息…</div><div class="send"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M6 11l6-6 6 6"/></svg></div></div>
+          </div>
+
+          <div class="peek">
+            <div class="top">
+              <div class="name">会话</div>
+              <div class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></div>
+            </div>
+            <div class="new"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>新会话</div>
+            <div class="group">今天</div>
+            <div class="item sel"><i class="b"></i><span>把侧边栏做成悬停展开</span></div>
+            <div class="item"><i class="b"></i><span>DSH 插件的最小骨架</span></div>
+            <div class="item"><i class="b"></i><span>给 dsh-cc-ui 换一套配色</span></div>
+            <div class="group">昨天</div>
+            <div class="item"><i class="b"></i><span>语音复刻插件的接入口</span></div>
+            <div class="item"><i class="b"></i><span>把 180 页年报拆成表格</span></div>
+            <div class="item"><i class="b"></i><span>Windows 标题栏下的列宽</span></div>
+          </div>
+
+          <svg class="cursor" viewBox="0 0 24 32" style="left:14px;top:420px">
+            <path d="M4 2l14 12-6.5 1.3L15 26l-4 1.5-3.6-10.6L4 22z" fill="#15181d" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/>
+          </svg>
+        </div>
+      </div>
+      <div class="cap"><span class="state hot">B</span><span><b>悬停</b>：指针停在图标栏 160ms 后浮层展开，对话区宽度不变；移开 280ms 后收回</span></div>
+    </div>
+  </div>
+</body>
+</html>

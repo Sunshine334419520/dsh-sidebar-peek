@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Sidebar hover peek",
+    "description": "Expands the sidebar while the pointer rests on the rail and collapses it on leave; overlay mode keeps the conversation in place."
+  }
+}
